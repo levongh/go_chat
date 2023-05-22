@@ -9,9 +9,8 @@ import (
 	"sync"
 	"text/template"
 
-	"github.com/matryer/goblueprints/chapter1/trace"
-
 	"go_chat/chat"
+	"go_chat/trace"
 )
 
 // templ represents a single template

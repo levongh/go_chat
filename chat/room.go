@@ -5,23 +5,24 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
-	"github.com/matryer/goblueprints/chapter1/trace"
+
+	"go_chat/trace"
 )
 
-type room struct {
+type Room struct {
 
 	// forward is a channel that holds incoming messages
 	// that should be forwarded to the other clients.
 	forward chan []byte
 
 	// join is a channel for clients wishing to join the room.
-	join chan *client
+	join chan *Client
 
 	// leave is a channel for clients wishing to leave the room.
-	leave chan *client
+	leave chan *Client
 
 	// clients holds all current clients in this room.
-	clients map[*client]bool
+	clients map[*Client]bool
 
 	// tracer will receive trace information of activity
 	// in the room.
@@ -30,17 +31,17 @@ type room struct {
 
 // newRoom makes a new room that is ready to
 // go.
-func NewRoom() *room {
-	return &room{
+func NewRoom() *Room {
+	return &Room{
 		forward: make(chan []byte),
-		join:    make(chan *client),
-		leave:   make(chan *client),
-		clients: make(map[*client]bool),
+		join:    make(chan *Client),
+		leave:   make(chan *Client),
+		clients: make(map[*Client]bool),
 		Tracer:  trace.Off(),
 	}
 }
 
-func (r *room) Run() {
+func (r *Room) Run() {
 	for {
 		select {
 		case client := <-r.join:
@@ -70,13 +71,13 @@ const (
 
 var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
 
-func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+func (r *Room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	socket, err := upgrader.Upgrade(w, req, nil)
 	if err != nil {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
-	client := &client{
+	client := &Client{
 		socket: socket,
 		send:   make(chan []byte, messageBufferSize),
 		room:   r,

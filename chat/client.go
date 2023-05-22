@@ -5,7 +5,7 @@ import (
 )
 
 // client represents a single chatting user.
-type client struct {
+type Client struct {
 
 	// socket is the web socket for this client.
 	socket *websocket.Conn
@@ -14,10 +14,10 @@ type client struct {
 	send chan []byte
 
 	// room is the room this client is chatting in.
-	room *room
+	room *Room
 }
 
-func (c *client) read() {
+func (c *Client) read() {
 	defer c.socket.Close()
 	for {
 		_, msg, err := c.socket.ReadMessage()
@@ -28,7 +28,7 @@ func (c *client) read() {
 	}
 }
 
-func (c *client) write() {
+func (c *Client) write() {
 	defer c.socket.Close()
 	for msg := range c.send {
 		err := c.socket.WriteMessage(websocket.TextMessage, msg)
