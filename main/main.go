@@ -1,11 +1,17 @@
 package main
 
 import (
-	"html/template"
+	"flag"
 	"log"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sync"
+	"text/template"
+
+	"github.com/matryer/goblueprints/chapter1/trace"
+
+	"go_chat/chat"
 )
 
 // templ represents a single template
@@ -15,19 +21,31 @@ type templateHandler struct {
 	templ    *template.Template
 }
 
-// ServeHttp handles the HTTP request
+// ServeHTTP handles the HTTP request.
 func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	t.once.Do(func() {
 		t.templ = template.Must(template.ParseFiles(filepath.Join("templates", t.filename)))
 	})
-	t.templ.Execute(w, nil)
+	t.templ.Execute(w, r)
 }
 
 func main() {
-	http.Handle("/", &templateHandler{filename: "chat.html"})
+	var addr = flag.String("addr", ":8080", "The addr of the application.")
+	flag.Parse() // parse the flags
 
-	// start te web server
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatal("ListenAndServe: ", err)
+	r := chat.NewRoom()
+	r.Tracer = trace.New(os.Stdout)
+
+	http.Handle("/", &templateHandler{filename: "chat.html"})
+	http.Handle("/room", r)
+
+	// get the room going
+	go r.Run()
+
+	// start the web server
+	log.Println("Starting web server on", *addr)
+	if err := http.ListenAndServe(*addr, nil); err != nil {
+		log.Fatal("ListenAndServe:", err)
 	}
+
 }
