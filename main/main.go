@@ -35,12 +35,21 @@ func main() {
 	r := chat.NewRoom()
 	r.Tracer = trace.New(os.Stdout)
 
-	http.Handle("/", &templateHandler{filename: "chat.html"})
+	http.Handle("/", &templateHandler{
+		filename: "chat.html"},
+	)
+	//http.Handle("/chat", MustAuth(&templateHandler{
+	//	filename: "chat.html"}),
+	//)
+
+	http.Handle("/chat", chat.MustAuth(&templateHandler{
+		filename: "chat.html"}),
+	)
+
 	http.Handle("/room", r)
 
 	// get the room going
 	go r.Run()
-
 	// start the web server
 	log.Println("Starting web server on", *addr)
 	if err := http.ListenAndServe(*addr, nil); err != nil {
